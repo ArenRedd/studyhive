@@ -1,0 +1,204 @@
+:root {
+  --bg: #14110d;
+  --surface: #1e1a14;
+  --surface-2: #241e16;
+  --border: #2e271d;
+  --amber: #f5b301;
+  --gold: #ffd66b;
+  --cream: #f4ebd9;
+  --taupe: #9a8f7c;
+  --success: #4caf7a;
+  --hex-clip: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  --hex-clip-pointy: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(245, 179, 1, 0.28);
+  color: var(--cream);
+}
+
+/* ---------- hexagon + panel shapes ---------- */
+.hex {
+  clip-path: var(--hex-clip);
+}
+.hex-pointy {
+  clip-path: var(--hex-clip-pointy);
+}
+.nav-clip {
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+.tab-clip {
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+}
+.row-clip {
+  clip-path: polygon(0 6px, 6px 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+.amber-grad {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, #ffd66b 0%, #f5b301 52%, #d8a000 100%);
+}
+.honey-grad {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 36%),
+    linear-gradient(180deg, #ffc93c 0%, #f5b301 60%, #c98a05 100%);
+}
+
+/* ---------- gloss: a soft light wash across a surface ---------- */
+.glossy {
+  position: relative;
+}
+.glossy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    162deg,
+    rgba(255, 255, 255, 0.085) 0%,
+    rgba(255, 255, 255, 0.025) 30%,
+    rgba(255, 255, 255, 0) 56%
+  );
+}
+.glossy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.glow-amber {
+  filter: drop-shadow(0 0 10px rgba(245, 179, 1, 0.45));
+}
+
+/* ---------- motion ---------- */
+@keyframes waveShift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.wave-a {
+  animation: waveShift 6s linear infinite;
+}
+.wave-b {
+  animation: waveShift 4.2s linear infinite reverse;
+}
+
+@keyframes wingFlap {
+  0%,
+  100% {
+    transform: scaleY(1) rotate(0deg);
+  }
+  50% {
+    transform: scaleY(0.4) rotate(-4deg);
+  }
+}
+.wing {
+  animation: wingFlap 0.14s ease-in-out infinite;
+}
+
+@keyframes dropTravel {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.honey-drop-travel {
+  animation: dropTravel 7.5s linear infinite;
+}
+
+@keyframes trailDash {
+  to {
+    stroke-dashoffset: -64;
+  }
+}
+.trail-dash {
+  animation: trailDash 1.8s linear infinite;
+}
+
+@keyframes bzzz {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  25%,
+  70% {
+    opacity: 0.9;
+    transform: translateY(0);
+  }
+}
+.bzzz {
+  animation: bzzz 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-a,
+  .wave-b,
+  .wing,
+  .honey-drop-travel,
+  .trail-dash,
+  .bzzz {
+    animation: none !important;
+  }
+}
+
+/* ---------- scrollbars + focus ---------- */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3123 transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #3a3123;
+  border-radius: 99px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
