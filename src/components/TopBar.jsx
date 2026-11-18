@@ -62,6 +62,14 @@ export default function TopBar() {
             </span>
             <span aria-hidden="true" className="text-[#4A3F2C]">·</span>
             <span>{sessionLabel}</span>
+            {currentSubject.code === 'CS3691' && (
+              <>
+                <span aria-hidden="true" className="text-[#4A3F2C]">·</span>
+                <span className="hidden sm:inline text-[var(--cream)] font-medium">
+                  26 Questions · 5 Units
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>

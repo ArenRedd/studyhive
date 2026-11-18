@@ -20,6 +20,8 @@ export default function Dashboard() {
     }
   }, [subjectId, selectSubject]);
 
+  const hasQuestions = currentSubject.code === 'CS3691';
+
   const {
     progress,
     completedSet,
@@ -65,17 +67,19 @@ export default function Dashboard() {
     <div className="relative flex min-h-full flex-col">
       <div className="px-3 pt-1 sm:px-4 lg:px-5">
         <div className="mx-auto flex w-full max-w-[1420px] flex-col gap-3 lg:flex-row lg:items-start">
-          <div className="flex w-full flex-col gap-3 lg:w-[300px] lg:shrink-0 xl:w-[336px]">
-            <div className="px-1 pb-4 pt-2">
-              <HoneyJar
-                percent={progress.percent}
-                completed={progress.completed}
-                total={progress.total}
-              />
+          {hasQuestions && (
+            <div className="flex w-full flex-col gap-3 lg:w-[300px] lg:shrink-0 xl:w-[336px]">
+              <div className="px-1 pb-4 pt-2">
+                <HoneyJar
+                  percent={progress.percent}
+                  completed={progress.completed}
+                  total={progress.total}
+                />
+              </div>
+              <HiveStatus />
+              <UnitNests />
             </div>
-            <HiveStatus />
-            <UnitNests />
-          </div>
+          )}
 
           <div className="min-w-0 flex-1">
             <MainPanel
@@ -91,6 +95,7 @@ export default function Dashboard() {
               onStar={toggleRevision}
               onGotIt={completeQuestion}
               pulseId={pulseId}
+              hasQuestions={hasQuestions}
             />
           </div>
         </div>
@@ -98,15 +103,18 @@ export default function Dashboard() {
 
       <div className="flex-1" />
 
-      <QuestDock
-        questCount={questCount}
-        questTarget={questTarget}
-        questComplete={questComplete}
-        onContinue={handleContinue}
-        hasNext={Boolean(nextUnchecked(selectedUnit))}
-      />
-
-      <HexConfetti trigger={celebrateAt} />
+      {hasQuestions && (
+        <>
+          <QuestDock
+            questCount={questCount}
+            questTarget={questTarget}
+            questComplete={questComplete}
+            onContinue={handleContinue}
+            hasNext={Boolean(nextUnchecked(selectedUnit))}
+          />
+          <HexConfetti trigger={celebrateAt} />
+        </>
+      )}
 
       <p className="sr-only" aria-live="polite">
         Subject {currentSubject.fullName} ({currentSubject.code}) selected.
