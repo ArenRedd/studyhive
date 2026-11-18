@@ -1,0 +1,9 @@
+{
+  "short_name": "StudyHive",
+  "name": "StudyHive – CS3691 Exam Prep",
+  "icons": [],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#14110D",
+  "background_color": "#14110D"
+}
