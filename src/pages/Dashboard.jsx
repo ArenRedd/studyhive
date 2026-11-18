@@ -6,7 +6,6 @@ import HoneyJar from '@/components/HoneyJar';
 import HiveStatus from '@/components/HiveStatus';
 import UnitNests from '@/components/UnitNests';
 import MainPanel from '@/components/MainPanel';
-import QuestDock from '@/components/QuestDock';
 import HexConfetti from '@/components/HexConfetti';
 
 export default function Dashboard() {
@@ -113,18 +112,7 @@ export default function Dashboard() {
 
       <div className="flex-1" />
 
-      {hasQuestions && (
-        <>
-          <QuestDock
-            questCount={questCount}
-            questTarget={questTarget}
-            questComplete={questComplete}
-            onContinue={handleContinue}
-            hasNext={Boolean(nextUnchecked(selectedUnit))}
-          />
-          <HexConfetti trigger={celebrateAt} />
-        </>
-      )}
+      {hasQuestions && <HexConfetti trigger={celebrateAt} />}
 
       <p className="sr-only" aria-live="polite">
         Subject {currentSubject.fullName} ({currentSubject.code}) selected.
