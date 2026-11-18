@@ -1100,6 +1100,28 @@
           releaseEntrance();
         });
       }
+      function handleLoginAction(e) {
+        if (e) e.preventDefault();
+        try {
+          localStorage.setItem('studyhive_auth', 'true');
+          var userObj = {
+            email: (emailEl && emailEl.value) ? emailEl.value : 'student@annauniv.edu',
+            loggedInAt: new Date().toISOString()
+          };
+          localStorage.setItem('studyhive_user', JSON.stringify(userObj));
+        } catch (err) {}
+
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'studyhive_login_success' }, '*');
+        }
+        window.location.href = '/subjects';
+      }
+
+      if (loginBtnEl) loginBtnEl.addEventListener('click', handleLoginAction);
+      if (gBtnEl) gBtnEl.addEventListener('click', handleLoginAction);
+      var formEl = document.querySelector('form');
+      if (formEl) formEl.addEventListener('submit', handleLoginAction);
+
       Promise.race([
         document.fonts.ready,
         new Promise(function(r) { setTimeout(r, 650); })

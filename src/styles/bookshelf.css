@@ -1,0 +1,149 @@
+.bookshelf-container {
+  --paper: #EDEBE6;
+  --sheet: #F4F2ED;
+  --ink: #141414;
+  --muted: #6D6A63;
+  --cobalt: #1F3FB0;
+  --rule: rgba(20, 20, 20, 0.9);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --H: min(46vh, 31vw);
+
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: "Inter Tight", "Noto Sans JP", system-ui, sans-serif;
+  z-index: 40;
+}
+
+@media (max-width: 767px) {
+  .bookshelf-container {
+    --H: min(60vw, 40svh);
+  }
+}
+
+@media (pointer: fine) {
+  .bookshelf-container,
+  .bookshelf-container button,
+  .bookshelf-container a,
+  .bookshelf-container [role="button"],
+  .bookshelf-container input {
+    cursor: none !important;
+  }
+}
+
+.bookshelf-container .font-serif-newsreader {
+  font-family: "Newsreader", Georgia, serif;
+}
+
+.bookshelf-container .font-sans-vasari {
+  font-family: "Inter Tight", "Noto Sans JP", system-ui, sans-serif;
+}
+
+.bookshelf-container .font-sc-logo {
+  font-family: "Noto Serif SC", serif;
+}
+
+.bookshelf-container .lbl {
+  font-family: "Inter Tight", "Noto Sans JP", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 767px) {
+  .bookshelf-container .lbl {
+    font-size: 9px;
+  }
+}
+
+.bookshelf-container .box-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 21px;
+  padding: 0 8px;
+  border: 1px solid var(--rule);
+  text-decoration: none;
+  color: var(--ink);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+/* 3D stage and tape faces */
+.bookshelf-container .shelf-stage {
+  transform-style: preserve-3d;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+}
+
+.bookshelf-container .tape {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.bookshelf-container .tape-face {
+  position: absolute;
+  top: calc(var(--H) * -0.5);
+  height: var(--H);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.bookshelf-container .tape-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: #000;
+  opacity: var(--shade, 0);
+  pointer-events: none;
+  border-radius: inherit;
+  transition: opacity 0.05s linear;
+}
+
+.bookshelf-container .sp {
+  width: var(--ws);
+  left: calc(var(--ws) * -0.5);
+  transform: translateZ(calc(var(--d) * 0.5));
+}
+
+.bookshelf-container .cv {
+  width: var(--d);
+  left: calc(var(--d) * -0.5);
+  transform: rotateY(90deg) translateZ(calc(var(--ws) * 0.5));
+  box-shadow: 0 30px 60px -28px rgba(20, 16, 10, 0.55);
+}
+
+/* Paper grain overlay */
+.bookshelf-container .paper-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.45  0 0 0 0 0.42  0 0 0 0 0.38  0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}

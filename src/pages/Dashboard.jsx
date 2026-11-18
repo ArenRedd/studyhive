@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useProgress } from '@/components/ProgressProvider';
+import { useSubject } from '@/context/SubjectContext';
 import HoneyJar from '@/components/HoneyJar';
 import HiveStatus from '@/components/HiveStatus';
 import UnitNests from '@/components/UnitNests';
@@ -9,6 +11,15 @@ import HexConfetti from '@/components/HexConfetti';
 import { allQuestions, getUnit } from '@/data/units';
 
 export default function Dashboard() {
+  const { subjectId } = useParams();
+  const { currentSubject, selectSubject } = useSubject();
+
+  useEffect(() => {
+    if (subjectId) {
+      selectSubject(subjectId);
+    }
+  }, [subjectId, selectSubject]);
+
   const {
     progress,
     completedSet,
@@ -22,7 +33,6 @@ export default function Dashboard() {
     toggleQuestion,
     toggleRevision,
     completeQuestion,
-    selectUnit,
     nextUnchecked,
   } = useProgress();
 
@@ -57,7 +67,11 @@ export default function Dashboard() {
         <div className="mx-auto flex w-full max-w-[1420px] flex-col gap-3 lg:flex-row lg:items-start">
           <div className="flex w-full flex-col gap-3 lg:w-[300px] lg:shrink-0 xl:w-[336px]">
             <div className="px-1 pb-4 pt-2">
-              <HoneyJar percent={progress.percent} completed={progress.completed} total={progress.total} />
+              <HoneyJar
+                percent={progress.percent}
+                completed={progress.completed}
+                total={progress.total}
+              />
             </div>
             <HiveStatus />
             <UnitNests />
@@ -95,10 +109,7 @@ export default function Dashboard() {
       <HexConfetti trigger={celebrateAt} />
 
       <p className="sr-only" aria-live="polite">
-        Unit {unit.id} selected. {selectedStat.completed} of {selectedStat.total} questions complete.
-      </p>
-      <p className="sr-only" aria-live="polite">
-        Overall {progress.percent} percent complete.
+        Subject {currentSubject.fullName} ({currentSubject.code}) selected.
       </p>
     </div>
   );

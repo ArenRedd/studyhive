@@ -1,10 +1,24 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from '@/data/nav';
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+
   return (
     <aside className="relative z-20 hidden w-[204px] shrink-0 flex-col gap-1.5 px-3 pb-2 pt-1 md:flex xl:w-[228px] xl:px-4">
+      {/* Switch Subject Button */}
+      <button
+        type="button"
+        onClick={() => navigate('/subjects')}
+        className="mb-1.5 flex items-center justify-center gap-2.5 rounded-xl border border-[var(--amber)]/40 bg-[#251E14] px-3.5 py-2.5 text-xs font-bold text-[var(--amber)] hover:bg-[var(--amber)] hover:text-[#14110D] transition-all duration-200 cursor-pointer lg:justify-start shadow-sm"
+        title="Return to Bookshelf"
+      >
+        <ArrowLeft size={16} className="shrink-0" />
+        <span className="hidden truncate lg:inline">Switch Subject</span>
+      </button>
+
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         return (

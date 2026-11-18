@@ -1,45 +1,71 @@
-import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { Toaster } from "@/components/ui/toaster";
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClientInstance } from '@/lib/query-client';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
+import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { SubjectProvider, useSubject } from '@/context/SubjectContext';
+
+import LoginPage from '@/pages/LoginPage';
+import BookshelfPage from '@/pages/BookshelfPage';
 import Shell from '@/components/Shell';
 import Dashboard from '@/pages/Dashboard';
 import ExamReadiness from '@/pages/ExamReadiness';
 import PlaceholderPage from '@/pages/PlaceholderPage';
 
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
+  return children;
+}
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
-  }
+function DashboardRedirect() {
+  const { currentSubject } = useSubject();
+  return <Navigate to={`/dashboard/${currentSubject?.code || 'CS3691'}`} replace />;
+}
 
-  // Render the main app
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <Routes>
-      <Route element={<Shell />}>
-        <Route path="/" element={<Dashboard />} />
+      {/* Root Route: If logged in -> Bookshelf, else -> Login */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/subjects" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
+      {/* Login Route: Signal login page */}
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Bookshelf Route: Subject chooser */}
+      <Route
+        path="/subjects"
+        element={
+          <ProtectedRoute>
+            <BookshelfPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* StudyHive Dashboard Route (Reusable for any subjectId) */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <Shell />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/dashboard" element={<DashboardRedirect />} />
+        <Route path="/dashboard/:subjectId" element={<Dashboard />} />
         <Route
           path="/quiz-mode"
           element={
@@ -63,7 +89,7 @@ const AuthenticatedApp = () => {
           element={
             <PlaceholderPage
               title="Unit Nests"
-              description="A closer look at each nest: question counts, readiness and marks distribution for CS3691."
+              description="A closer look at each nest: question counts, readiness and marks distribution."
             />
           }
         />
@@ -90,30 +116,40 @@ const AuthenticatedApp = () => {
           element={
             <PlaceholderPage
               title="Resources"
-              description="Reference links, datasheets and previous papers for the Embedded Systems & IoT course."
+              description="Reference links, datasheets and previous papers for the course."
             />
           }
         />
         <Route path="/exam-readiness" element={<ExamReadiness />} />
       </Route>
-      <Route path="*" element={<PageNotFound />} />
+
+      {/* Catch-all fallback */}
+      <Route
+        path="*"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/subjects" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
     </Routes>
   );
-};
-
-function App() {
-
-  return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
-  )
 }
 
-export default App
+export default function App() {
+  return (
+    <AuthProvider>
+      <SubjectProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <ScrollToTop />
+            <AppRoutes />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </SubjectProvider>
+    </AuthProvider>
+  );
+}
