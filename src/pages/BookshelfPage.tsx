@@ -250,10 +250,13 @@ export default function BookshelfPage() {
     }
 
     // Close pop-out detail if open
-    if (s.isOpen && detailRef.current) {
-      s.isOpen = false;
-      detailRef.current.getAnimations().forEach((a) => a.cancel());
-      detailRef.current.style.visibility = 'hidden';
+    s.isOpen = false;
+    if (detailRef.current) {
+      try {
+        detailRef.current.getAnimations().forEach((a) => a.cancel());
+        detailRef.current.style.visibility = 'hidden';
+        detailRef.current.style.clipPath = 'none';
+      } catch {}
     }
 
     s.inDashboard = false;
@@ -485,13 +488,17 @@ export default function BookshelfPage() {
 
   // Dimension probe and measurement
   const updateDimensions = useCallback(() => {
-    if (!probeRef.current) return;
-    const h = probeRef.current.offsetHeight || 340;
+    const w = window.innerWidth || 1440;
+    const wh = window.innerHeight || 900;
+    let h = 340;
+    if (probeRef.current && probeRef.current.offsetHeight > 50) {
+      h = probeRef.current.offsetHeight;
+    } else {
+      h = Math.min(wh * 0.46, w * 0.31);
+    }
     const ws = (h * 142) / 840;
     const d = (h * 474) / 900;
     const gap = h * 0.03;
-    const w = window.innerWidth;
-    const wh = window.innerHeight;
 
     stateRef.current.H = h;
     stateRef.current.ws = ws;
@@ -504,6 +511,9 @@ export default function BookshelfPage() {
       stageRef.current.style.setProperty('--ws', `${ws.toFixed(2)}px`);
       stageRef.current.style.setProperty('--d', `${d.toFixed(2)}px`);
       stageRef.current.style.setProperty('--H', `${h.toFixed(2)}px`);
+    }
+    if (containerRef.current) {
+      containerRef.current.style.setProperty('--H', `${h.toFixed(2)}px`);
     }
 
     // Sync tab indicator position
@@ -581,179 +591,192 @@ export default function BookshelfPage() {
     };
 
     const frameLoop = (timestamp: number) => {
-      const s = stateRef.current;
-      if (!s.lastTime) s.lastTime = timestamp;
-      const rawDt = (timestamp - s.lastTime) / 1000;
-      s.lastTime = timestamp;
-      const dt = Math.min(0.05, Math.max(0.001, rawDt));
+      try {
+        const s = stateRef.current;
+        if (!s.lastTime) s.lastTime = timestamp;
+        const rawDt = (timestamp - s.lastTime) / 1000;
+        s.lastTime = timestamp;
+        const dt = Math.min(0.05, Math.max(0.001, rawDt));
 
-      // Cursor smoothing (always runs even in dashboard)
-      s.cx += (s.mx - s.cx) * (1 - Math.exp(-16 * dt));
-      s.cy += (s.my - s.cy) * (1 - Math.exp(-16 * dt));
+        if (!Number.isFinite(s.s)) s.s = initialScroll;
+        if (!Number.isFinite(s.T)) s.T = initialScroll;
+        if (!Number.isFinite(s.ws) || s.ws <= 0) s.ws = 57;
+        if (!Number.isFinite(s.d) || s.d <= 0) s.d = 179;
+        if (!Number.isFinite(s.gap)) s.gap = 10;
+        if (!Number.isFinite(s.H) || s.H <= 0) s.H = 340;
+        if (!Number.isFinite(s.W) || s.W <= 0) s.W = window.innerWidth || 1440;
+        if (!Number.isFinite(s.windowH) || s.windowH <= 0) s.windowH = window.innerHeight || 900;
 
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate3d(${s.cx.toFixed(1)}px, ${s.cy.toFixed(1)}px, 0)`;
+        // Cursor smoothing (always runs even in dashboard)
+        s.cx += (s.mx - s.cx) * (1 - Math.exp(-16 * dt));
+        s.cy += (s.my - s.cy) * (1 - Math.exp(-16 * dt));
 
-        if (s.isOpen) {
-          cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.72]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
-          if (s.isOverBtn) {
-            cursorRingRef.current?.classList.add('scale-[0.55]');
+        if (cursorRef.current) {
+          cursorRef.current.style.transform = `translate3d(${s.cx.toFixed(1)}px, ${s.cy.toFixed(1)}px, 0)`;
+
+          if (s.isOpen) {
+            cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.72]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
+            if (s.isOverBtn) {
+              cursorRingRef.current?.classList.add('scale-[0.55]');
+              cursorDotRef.current?.classList.add('scale-0');
+            } else {
+              cursorRingRef.current?.classList.remove('scale-[0.55]');
+              cursorDotRef.current?.classList.remove('scale-0');
+            }
+            cursorLabelRef.current?.classList.remove('scale-100');
+          } else if (s.onCover) {
+            cursorRingRef.current?.classList.add('scale-[1.75]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
+            cursorRingRef.current?.classList.remove('scale-[0.72]', 'scale-[0.55]');
             cursorDotRef.current?.classList.add('scale-0');
-          } else {
-            cursorRingRef.current?.classList.remove('scale-[0.55]');
+            cursorLabelRef.current?.classList.add('scale-100');
+          } else if (s.isOverSpine) {
+            cursorRingRef.current?.classList.add('scale-[0.72]');
+            cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.55]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
             cursorDotRef.current?.classList.remove('scale-0');
+            cursorLabelRef.current?.classList.remove('scale-100');
+          } else if (s.isOverBtn) {
+            cursorRingRef.current?.classList.add('scale-[0.55]');
+            cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.72]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
+            cursorDotRef.current?.classList.add('scale-0');
+            cursorLabelRef.current?.classList.remove('scale-100');
+          } else {
+            cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.72]', 'scale-[0.55]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
+            cursorDotRef.current?.classList.remove('scale-0');
+            cursorLabelRef.current?.classList.remove('scale-100');
           }
-          cursorLabelRef.current?.classList.remove('scale-100');
-        } else if (s.onCover) {
-          cursorRingRef.current?.classList.add('scale-[1.75]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
-          cursorRingRef.current?.classList.remove('scale-[0.72]', 'scale-[0.55]');
-          cursorDotRef.current?.classList.add('scale-0');
-          cursorLabelRef.current?.classList.add('scale-100');
-        } else if (s.isOverSpine) {
-          cursorRingRef.current?.classList.add('scale-[0.72]');
-          cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.55]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
-          cursorDotRef.current?.classList.remove('scale-0');
-          cursorLabelRef.current?.classList.remove('scale-100');
-        } else if (s.isOverBtn) {
-          cursorRingRef.current?.classList.add('scale-[0.55]');
-          cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.72]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
-          cursorDotRef.current?.classList.add('scale-0');
-          cursorLabelRef.current?.classList.remove('scale-100');
-        } else {
-          cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.72]', 'scale-[0.55]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
-          cursorDotRef.current?.classList.remove('scale-0');
-          cursorLabelRef.current?.classList.remove('scale-100');
         }
-      }
 
-      // Scroll spring integration
-      if (s.isReducedMotion) {
-        s.s = s.T;
-      } else {
-        const k = s.isDragging ? 18 : 5.2;
-        s.s += (s.T - s.s) * (1 - Math.exp(-k * dt));
-        if (Math.abs(s.T - s.s) < 1e-4) {
+        // Scroll spring integration
+        if (s.isReducedMotion) {
           s.s = s.T;
-        }
-      }
-
-      // Loop normalisation (keep virtual scroll in comfortable range around 12..24)
-      while (s.s > 24) {
-        s.s -= 6;
-        s.T -= 6;
-      }
-      while (s.s < 12) {
-        s.s += 6;
-        s.T += 6;
-      }
-
-      // Check active subject index
-      const roundScroll = Math.round(s.s);
-      const currIdx = ((roundScroll % 6) + 6) % 6;
-
-      if (currIdx !== s.activeIdx) {
-        const dir = Math.sign(s.T - s.s) || 1;
-        s.lastActiveIdx = s.activeIdx;
-        s.activeIdx = currIdx;
-        const newSubj = SUBJECTS[currIdx];
-        setActiveSubject(newSubj);
-        swapCaption(newSubj, dir);
-
-        if (currIdx !== lastSoundActive) {
-          playCardSound(0.8);
-          lastSoundActive = currIdx;
-        }
-      }
-
-      // Tilt math towards cursor
-      const cy = s.windowH / 2;
-      const onCoverCheck =
-        Math.abs(s.mx - s.W / 2) < 0.55 * s.d &&
-        Math.abs(s.my - cy) < 0.55 * s.H &&
-        !s.isOpen &&
-        Math.abs(s.T - s.s) < 0.3;
-
-      s.onCover = onCoverCheck;
-
-      let targetTiltY = 0;
-      let targetTiltX = 0;
-
-      if (onCoverCheck) {
-        targetTiltY = ((s.mx - s.W / 2) / (0.55 * s.d)) * 9;
-        targetTiltX = (-(s.my - cy) / (s.H / 2)) * 6;
-      } else {
-        targetTiltY = ((s.mx - s.W / 2) / (s.W || 1)) * 5;
-        targetTiltX = 0;
-      }
-
-      s.tiltY += (targetTiltY - s.tiltY) * (1 - Math.exp(-7 * dt));
-      s.tiltX += (targetTiltX - s.tiltX) * (1 - Math.exp(-7 * dt));
-
-      // Update play ring position & scale
-      if (playRingRef.current) {
-        const ringScale = s.isOpen ? 0 : smoothstep(Math.max(0, 1 - Math.abs(s.T - s.s) * 3));
-        const playLeft = s.W / 2 - 0.5 * s.d - 6;
-        const playTop = cy + 0.36 * s.H;
-        playRingRef.current.style.transform = `translate3d(${playLeft.toFixed(1)}px, ${playTop.toFixed(1)}px, 0) scale(${ringScale.toFixed(3)})`;
-      }
-
-      // Render 36 tapes in 3D
-      const W2 = s.W / 2;
-      const cullingLimit = W2 + 1.5 * s.d;
-
-      for (let v = 0; v < 36; v++) {
-        const tapeEl = tapeElsRef.current[v];
-        if (!tapeEl) continue;
-
-        let r = (v - s.s) % 36;
-        if (r > 18) r -= 36;
-        if (r < -18) r += 36;
-
-        // Smooth step B(r)
-        let Br = 0;
-        if (Math.abs(r) < 1) {
-          Br = (r + Math.sin(Math.PI * r) / Math.PI) / 2;
         } else {
-          Br = r >= 1 ? 0.5 : -0.5;
+          const k = s.isDragging ? 18 : 5.2;
+          s.s += (s.T - s.s) * (1 - Math.exp(-k * dt));
+          if (Math.abs(s.T - s.s) < 1e-4) {
+            s.s = s.T;
+          }
         }
 
-        const x = r * (s.ws + s.gap) + (s.d - s.ws + 1.6 * s.gap) * Br;
+        // Loop normalisation (keep virtual scroll in comfortable range around 12..24)
+        while (s.s > 24) {
+          s.s -= 6;
+          s.T -= 6;
+        }
+        while (s.s < 12) {
+          s.s += 6;
+          s.T += 6;
+        }
 
-        // Culling
-        if (Math.abs(x) > cullingLimit) {
-          tapeEl.style.visibility = 'hidden';
-          continue;
+        // Check active subject index
+        const roundScroll = Math.round(s.s);
+        const currIdx = ((roundScroll % 6) + 6) % 6;
+
+        if (currIdx !== s.activeIdx) {
+          const dir = Math.sign(s.T - s.s) || 1;
+          s.lastActiveIdx = s.activeIdx;
+          s.activeIdx = currIdx;
+          const newSubj = SUBJECTS[currIdx];
+          setActiveSubject(newSubj);
+          swapCaption(newSubj, dir);
+
+          if (currIdx !== lastSoundActive) {
+            playCardSound(0.8);
+            lastSoundActive = currIdx;
+          }
+        }
+
+        // Tilt math towards cursor
+        const cy = s.windowH / 2;
+        const onCoverCheck =
+          Math.abs(s.mx - s.W / 2) < 0.55 * s.d &&
+          Math.abs(s.my - cy) < 0.55 * s.H &&
+          !s.isOpen &&
+          Math.abs(s.T - s.s) < 0.3;
+
+        s.onCover = onCoverCheck;
+
+        let targetTiltY = 0;
+        let targetTiltX = 0;
+
+        if (onCoverCheck) {
+          targetTiltY = ((s.mx - s.W / 2) / (0.55 * s.d)) * 9;
+          targetTiltX = (-(s.my - cy) / (s.H / 2)) * 6;
         } else {
-          tapeEl.style.visibility = 'visible';
+          targetTiltY = ((s.mx - s.W / 2) / (s.W || 1)) * 5;
+          targetTiltX = 0;
         }
 
-        // Lift easing
-        const targetLift = (s.hoveredVirtualIdx === v && Math.abs(r) > 0.5) ? 1 : 0;
-        s.targetLifts[v] = targetLift;
-        s.lifts[v] += (targetLift - s.lifts[v]) * (1 - Math.exp(-12 * dt));
-        const lift = s.lifts[v];
+        s.tiltY += (targetTiltY - s.tiltY) * (1 - Math.exp(-7 * dt));
+        s.tiltX += (targetTiltX - s.tiltX) * (1 - Math.exp(-7 * dt));
 
-        // Openness & rotations
-        const o = smoothstep(Math.max(0, 1 - Math.abs(r)));
-        const ry = -90 * o + s.tiltY * o;
-        const rx = s.tiltX * o;
-        const rz = -4.5 * o;
-        const tz = o * 0.2 * s.H;
-        const ty = -o * 0.025 * s.H - lift * 0.045 * s.H;
-        const zIndex = Math.round(100 - Math.abs(r) * 4);
-
-        tapeEl.style.zIndex = `${zIndex}`;
-        tapeEl.style.transform = `translate3d(${x.toFixed(2)}px, ${ty.toFixed(2)}px, ${tz.toFixed(2)}px) rotateZ(${rz.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
-
-        // Shading
-        const spineEl = spineElsRef.current[v];
-        const coverEl = coverElsRef.current[v];
-        if (spineEl) {
-          spineEl.style.setProperty('--shade', (o * 0.55).toFixed(3));
+        // Update play ring position & scale
+        if (playRingRef.current) {
+          const ringScale = s.isOpen ? 0 : smoothstep(Math.max(0, 1 - Math.abs(s.T - s.s) * 3));
+          const playLeft = s.W / 2 - 0.5 * s.d - 6;
+          const playTop = cy + 0.36 * s.H;
+          playRingRef.current.style.transform = `translate3d(${playLeft.toFixed(1)}px, ${playTop.toFixed(1)}px, 0) scale(${ringScale.toFixed(3)})`;
         }
-        if (coverEl) {
-          coverEl.style.setProperty('--shade', ((1 - o) * 0.5).toFixed(3));
+
+        // Render 36 tapes in 3D
+        const W2 = s.W / 2;
+        const cullingLimit = W2 + 1.5 * s.d;
+
+        for (let v = 0; v < 36; v++) {
+          const tapeEl = tapeElsRef.current[v];
+          if (!tapeEl) continue;
+
+          let r = (v - s.s) % 36;
+          if (r > 18) r -= 36;
+          if (r < -18) r += 36;
+
+          // Smooth step B(r)
+          let Br = 0;
+          if (Math.abs(r) < 1) {
+            Br = (r + Math.sin(Math.PI * r) / Math.PI) / 2;
+          } else {
+            Br = r >= 1 ? 0.5 : -0.5;
+          }
+
+          const x = r * (s.ws + s.gap) + (s.d - s.ws + 1.6 * s.gap) * Br;
+
+          // Culling
+          if (Math.abs(x) > cullingLimit) {
+            tapeEl.style.visibility = 'hidden';
+            continue;
+          } else {
+            tapeEl.style.visibility = 'visible';
+          }
+
+          // Lift easing
+          const targetLift = (s.hoveredVirtualIdx === v && Math.abs(r) > 0.5) ? 1 : 0;
+          s.targetLifts[v] = targetLift;
+          s.lifts[v] += (targetLift - s.lifts[v]) * (1 - Math.exp(-12 * dt));
+          const lift = s.lifts[v];
+
+          // Openness & rotations
+          const o = smoothstep(Math.max(0, 1 - Math.abs(r)));
+          const ry = -90 * o + s.tiltY * o;
+          const rx = s.tiltX * o;
+          const rz = -4.5 * o;
+          const tz = o * 0.2 * s.H;
+          const ty = -o * 0.025 * s.H - lift * 0.045 * s.H;
+          const zIndex = Math.round(100 - Math.abs(r) * 4);
+
+          tapeEl.style.zIndex = `${zIndex}`;
+          tapeEl.style.transform = `translate3d(${x.toFixed(2)}px, ${ty.toFixed(2)}px, ${tz.toFixed(2)}px) rotateZ(${rz.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+
+          // Shading
+          const spineEl = spineElsRef.current[v];
+          const coverEl = coverElsRef.current[v];
+          if (spineEl) {
+            spineEl.style.setProperty('--shade', (o * 0.55).toFixed(3));
+          }
+          if (coverEl) {
+            coverEl.style.setProperty('--shade', ((1 - o) * 0.5).toFixed(3));
+          }
         }
+      } catch (err) {
+        console.error('Bookshelf frameLoop error:', err);
       }
 
       animId = requestAnimationFrame(frameLoop);
@@ -811,9 +834,13 @@ export default function BookshelfPage() {
     if (r > 18) r -= 36;
     if (r < -18) r += 36;
 
+    const subj = SUBJECTS[virtualIdx % 6];
+
     if (Math.abs(r) < 0.5) {
-      openDetail();
+      // Center active book clicked -> open that subject's StudyHive dashboard directly!
+      openDashboardForSubject(subj);
     } else {
+      // Adjacent book clicked -> scroll it smoothly to the center
       s.T = Math.round(s.T + r);
       playCardSound(1.0);
     }

@@ -2,7 +2,6 @@ import HoneyHex from '@/components/HoneyHex';
 import SectionHeading from '@/components/SectionHeading';
 import BeeSvg from '@/components/BeeSvg';
 import { useProgress } from '@/components/ProgressProvider';
-import { units } from '@/data/units';
 
 function UnitHex({ unit, stat, selected, onSelect }) {
   return (
@@ -39,7 +38,7 @@ function UnitHex({ unit, stat, selected, onSelect }) {
 }
 
 export default function UnitNests() {
-  const { progress, selectedUnit, selectUnit } = useProgress();
+  const { units = [], progress, selectedUnit, selectUnit } = useProgress();
 
   const render = (unit) => (
     <UnitHex

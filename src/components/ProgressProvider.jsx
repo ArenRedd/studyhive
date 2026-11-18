@@ -3,8 +3,8 @@ import { useProgressState } from '@/hooks/useProgress';
 
 const ProgressContext = createContext(null);
 
-export function ProgressProvider({ children }) {
-  const value = useProgressState();
+export function ProgressProvider({ subjectCode = 'CS3691', children }) {
+  const value = useProgressState(subjectCode);
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;
 }
 

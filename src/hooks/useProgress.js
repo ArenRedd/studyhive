@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_COMPLETED, units } from '@/data/units';
-
-const STORAGE_KEY = 'studyhive.progress.v2';
+import { DEFAULT_COMPLETED, loadSubjectUnits } from '@/data/units';
 
 export const QUEST_TARGET = 3;
 export const HONEY_PER_QUESTION = 10;
@@ -27,22 +25,20 @@ const createDefaultState = () => ({
   questDate: dayKey(),
   questCount: 2,
   questComplete: false,
-  selectedUnit: 'II',
+  selectedUnit: 'I',
   celebrateAt: 0,
 });
 
-const readState = () => {
+const readState = (storageKey) => {
   const base = createDefaultState();
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return base;
     const parsed = JSON.parse(raw);
     const merged = { ...base, ...parsed };
     if (!Array.isArray(merged.completedIds)) merged.completedIds = [...DEFAULT_COMPLETED];
     if (!Array.isArray(merged.revisionIds)) merged.revisionIds = [];
-    // a celebration must never replay after a reload
     merged.celebrateAt = 0;
-    // daily quest resets at local midnight
     if (merged.questDate !== dayKey()) {
       merged.questDate = dayKey();
       merged.questCount = 0;
@@ -54,18 +50,27 @@ const readState = () => {
   }
 };
 
-export function useProgressState() {
-  const [state, setState] = useState(readState);
+export function useProgressState(subjectCode = 'CS3691') {
+  const PROGRESS_KEY = `studyhive.progress.${subjectCode}`;
+  const UNITS_KEY = `studyhive.custom_units.${subjectCode}`;
+
+  const [units, setUnits] = useState(() => loadSubjectUnits(subjectCode));
+  const [state, setState] = useState(() => readState(PROGRESS_KEY));
+
+  useEffect(() => {
+    setUnits(loadSubjectUnits(subjectCode));
+    setState(readState(PROGRESS_KEY));
+  }, [subjectCode, PROGRESS_KEY]);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
     } catch {
-      /* storage full or unavailable — progress stays in memory */
+      /* storage full or unavailable */
     }
-  }, [state]);
+  }, [state, PROGRESS_KEY]);
 
-  // daily quest resets at local midnight, even with the tab left open
+  // daily quest resets at local midnight
   useEffect(() => {
     const id = window.setInterval(() => {
       setState((prev) =>
@@ -76,6 +81,69 @@ export function useProgressState() {
     }, 60000);
     return () => window.clearInterval(id);
   }, []);
+
+  const addQuestion = useCallback(
+    (unitId, text, answer = '') => {
+      if (!text || !text.trim()) return null;
+      const cleanText = text.trim();
+      const cleanAnswer = answer ? answer.trim() : '';
+
+      let newId = '';
+      setUnits((prevUnits) => {
+        const targetUnit = prevUnits.find((u) => u.id === unitId) || prevUnits[0];
+        const nextNum = (targetUnit?.questions?.length || 0) + 1;
+        newId = `${unitId}.${nextNum}-${Date.now().toString(36).slice(-4)}`;
+
+        const newQ = {
+          id: newId,
+          text: cleanText,
+          answer: cleanAnswer,
+          custom: true,
+        };
+
+        const updated = prevUnits.map((u) => {
+          if (u.id === unitId) {
+            return {
+              ...u,
+              questions: [...u.questions, newQ],
+            };
+          }
+          return u;
+        });
+
+        try {
+          window.localStorage.setItem(UNITS_KEY, JSON.stringify(updated));
+        } catch {}
+
+        return updated;
+      });
+
+      return newId;
+    },
+    [UNITS_KEY],
+  );
+
+  const deleteQuestion = useCallback(
+    (questionId) => {
+      setUnits((prevUnits) => {
+        const updated = prevUnits.map((u) => ({
+          ...u,
+          questions: u.questions.filter((q) => q.id !== questionId),
+        }));
+        try {
+          window.localStorage.setItem(UNITS_KEY, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+
+      setState((prev) => ({
+        ...prev,
+        completedIds: prev.completedIds.filter((id) => id !== questionId),
+        revisionIds: prev.revisionIds.filter((id) => id !== questionId),
+      }));
+    },
+    [UNITS_KEY],
+  );
 
   const completeQuestion = useCallback((questionId) => {
     setState((prev) => {
@@ -136,6 +204,17 @@ export function useProgressState() {
     setState((prev) => ({ ...prev, selectedUnit: unitId }));
   }, []);
 
+  const allQuestions = useMemo(() => {
+    return units.flatMap((unit) =>
+      unit.questions.map((question) => ({
+        ...question,
+        unitId: unit.id,
+        unitTitle: unit.title,
+        shortTitle: unit.shortTitle,
+      })),
+    );
+  }, [units]);
+
   const progress = useMemo(() => {
     const done = new Set(state.completedIds);
     const perUnit = units.map((unit) => {
@@ -161,13 +240,19 @@ export function useProgressState() {
       percent: total ? Math.round((completed / total) * 100) : 0,
       byUnit: perUnit.reduce((acc, unit) => ({ ...acc, [unit.id]: unit }), {}),
     };
-  }, [state.completedIds]);
+  }, [state.completedIds, units]);
 
   const completedSet = useMemo(() => new Set(state.completedIds), [state.completedIds]);
   const revisionSet = useMemo(() => new Set(state.revisionIds), [state.revisionIds]);
 
   const selectedUnit = state.selectedUnit;
-  const selectedStat = progress.byUnit[selectedUnit] || progress.perUnit[0];
+  const selectedStat = progress.byUnit[selectedUnit] || progress.perUnit[0] || {
+    id: selectedUnit,
+    total: 0,
+    completed: 0,
+    remaining: 0,
+    percent: 0,
+  };
 
   const nextUnchecked = useCallback(
     (unitId) => {
@@ -177,11 +262,13 @@ export function useProgressState() {
       const next = unit.questions.find((question) => !done.has(question.id));
       return next ? next.id : null;
     },
-    [state.completedIds],
+    [state.completedIds, units],
   );
 
   return {
     state,
+    units,
+    allQuestions,
     completedIds: state.completedIds,
     completedSet,
     revisionIds: state.revisionIds,
@@ -201,5 +288,7 @@ export function useProgressState() {
     toggleRevision,
     selectUnit,
     nextUnchecked,
+    addQuestion,
+    deleteQuestion,
   };
 }

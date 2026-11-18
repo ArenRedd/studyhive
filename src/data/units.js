@@ -94,3 +94,25 @@ export const allQuestions = units.flatMap((unit) =>
 );
 
 export const getQuestion = (questionId) => allQuestions.find((question) => question.id === questionId);
+
+export const createDefaultSubjectUnits = (code = '') => [
+  { id: 'I', title: 'Unit I', shortTitle: 'Unit I', questions: [] },
+  { id: 'II', title: 'Unit II', shortTitle: 'Unit II', questions: [] },
+  { id: 'III', title: 'Unit III', shortTitle: 'Unit III', questions: [] },
+  { id: 'IV', title: 'Unit IV', shortTitle: 'Unit IV', questions: [] },
+  { id: 'V', title: 'Unit V', shortTitle: 'Unit V', questions: [] },
+];
+
+export const loadSubjectUnits = (subjectCode = 'CS3691') => {
+  try {
+    const raw = localStorage.getItem(`studyhive.custom_units.${subjectCode}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  if (subjectCode === 'CS3691') {
+    return units;
+  }
+  return createDefaultSubjectUnits(subjectCode);
+};

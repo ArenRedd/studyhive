@@ -8,7 +8,6 @@ import UnitNests from '@/components/UnitNests';
 import MainPanel from '@/components/MainPanel';
 import QuestDock from '@/components/QuestDock';
 import HexConfetti from '@/components/HexConfetti';
-import { allQuestions, getUnit } from '@/data/units';
 
 export default function Dashboard() {
   const { subjectId } = useParams();
@@ -20,9 +19,9 @@ export default function Dashboard() {
     }
   }, [subjectId, selectSubject]);
 
-  const hasQuestions = currentSubject.code === 'CS3691';
-
   const {
+    units = [],
+    allQuestions = [],
     progress,
     completedSet,
     revisionSet,
@@ -36,13 +35,21 @@ export default function Dashboard() {
     toggleRevision,
     completeQuestion,
     nextUnchecked,
+    addQuestion,
+    deleteQuestion,
   } = useProgress();
 
   const [tab, setTab] = useState('checklist');
   const [pulseId, setPulseId] = useState(null);
   const pulseTimer = useRef(null);
 
-  const unit = getUnit(selectedUnit);
+  const unit =
+    units.find((u) => u.id === selectedUnit) ||
+    units[0] || { id: 'I', title: 'Unit I', shortTitle: 'Unit I', questions: [] };
+
+  const hasQuestions =
+    currentSubject.code === 'CS3691' ||
+    units.some((u) => u.questions && u.questions.length > 0);
 
   useEffect(() => () => window.clearTimeout(pulseTimer.current), []);
 
@@ -84,6 +91,7 @@ export default function Dashboard() {
           <div className="min-w-0 flex-1">
             <MainPanel
               unit={unit}
+              units={units}
               stat={selectedStat}
               tab={tab}
               onTabChange={setTab}
@@ -96,6 +104,8 @@ export default function Dashboard() {
               onGotIt={completeQuestion}
               pulseId={pulseId}
               hasQuestions={hasQuestions}
+              onAddQuestion={addQuestion}
+              onDeleteQuestion={deleteQuestion}
             />
           </div>
         </div>

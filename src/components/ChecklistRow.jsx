@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { Star, Trash2 } from 'lucide-react';
 import BeeSvg from '@/components/BeeSvg';
 import { cn } from '@/lib/utils';
 
-export default function ChecklistRow({ question, completed, starred, pulse, onToggle, onStar }) {
+export default function ChecklistRow({
+  question,
+  completed,
+  starred,
+  pulse,
+  onToggle,
+  onStar,
+  onDelete,
+}) {
   const [resting, setResting] = useState(false);
   const timer = useRef(null);
 
@@ -43,7 +51,7 @@ export default function ChecklistRow({ question, completed, starred, pulse, onTo
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
         className={cn(
-          'row-clip group relative flex cursor-pointer items-center gap-2 py-2 pl-1.5 pr-11 transition-colors duration-300',
+          'row-clip group relative flex cursor-pointer items-center gap-2.5 py-2 pl-1.5 pr-16 transition-colors duration-300',
           completed ? 'text-[var(--cream)]' : 'text-[#CFC3AC] hover:text-[var(--cream)]',
         )}
         style={
@@ -95,22 +103,39 @@ export default function ChecklistRow({ question, completed, starred, pulse, onTo
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onStar();
-        }}
-        aria-label={starred ? `Remove "${question.text}" from revision` : `Add "${question.text}" to revision`}
-        aria-pressed={starred}
-        className="absolute right-2.5 top-1/2 z-20 -translate-y-1/2 rounded-full p-1.5 text-[#7D7263] transition-colors hover:text-[var(--gold)]"
-      >
-        <Star
-          size={14}
-          strokeWidth={1.5}
-          className={starred ? 'fill-[var(--amber)] text-[var(--amber)]' : ''}
-        />
-      </button>
+      <div className="absolute right-2 top-1/2 z-20 flex -translate-y-1/2 items-center gap-1">
+        {onDelete && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(question.id);
+            }}
+            aria-label={`Delete "${question.text}"`}
+            className="rounded-full p-1 text-[#665946] transition-colors hover:text-red-400 opacity-60 hover:opacity-100"
+            title="Delete question"
+          >
+            <Trash2 size={13} strokeWidth={1.5} />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onStar();
+          }}
+          aria-label={starred ? `Remove "${question.text}" from revision` : `Add "${question.text}" to revision`}
+          aria-pressed={starred}
+          className="rounded-full p-1 text-[#7D7263] transition-colors hover:text-[var(--gold)]"
+        >
+          <Star
+            size={14}
+            strokeWidth={1.5}
+            className={starred ? 'fill-[var(--amber)] text-[var(--amber)]' : ''}
+          />
+        </button>
+      </div>
 
       {pulse && (
         <span
@@ -126,7 +151,7 @@ export default function ChecklistRow({ question, completed, starred, pulse, onTo
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.7 }}
             transition={{ duration: 0.3 }}
-            className="pointer-events-none absolute right-8 top-1/2 z-20 -translate-y-1/2"
+            className="pointer-events-none absolute right-12 top-1/2 z-20 -translate-y-1/2"
           >
             <BeeSvg className="h-6 w-8" />
           </motion.div>
