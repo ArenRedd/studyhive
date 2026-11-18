@@ -27,12 +27,10 @@ const INK_BLOBS = [
 function getInitialPersistedState(): {
   subjectIdx: number;
   subject: SubjectItem;
-  view: 'shelf' | 'dashboard';
 } {
-  const defaultIdx = 1; // CS3591 COMPUTER NETWORKS
+  const defaultIdx = 0; // CS3691 EMBEDDED SYSTEMS & IOT
   try {
     const savedRaw = localStorage.getItem(STORAGE_SUBJECT_KEY);
-    const savedView = localStorage.getItem(STORAGE_VIEW_KEY);
     if (savedRaw) {
       const parsed = JSON.parse(savedRaw) as Partial<SubjectItem>;
       const foundIdx = SUBJECTS.findIndex((s) => s.code === parsed.code);
@@ -40,7 +38,6 @@ function getInitialPersistedState(): {
         return {
           subjectIdx: foundIdx,
           subject: SUBJECTS[foundIdx],
-          view: savedView === 'dashboard' ? 'dashboard' : 'shelf',
         };
       }
     }
@@ -50,7 +47,6 @@ function getInitialPersistedState(): {
   return {
     subjectIdx: defaultIdx,
     subject: SUBJECTS[defaultIdx],
-    view: 'shelf',
   };
 }
 
@@ -112,7 +108,7 @@ export default function BookshelfPage() {
     isOverSpine: false,
     isOverBtn: false,
     isOpen: false,
-    inDashboard: persisted.current.view === 'dashboard',
+    inDashboard: false,
     isDragging: false,
     dragStartX: 0,
     dragStartT: 0,
@@ -260,18 +256,18 @@ export default function BookshelfPage() {
       detailRef.current.style.visibility = 'hidden';
     }
 
-    s.inDashboard = true;
+    s.inDashboard = false;
     s.onCover = false;
     s.isOverSpine = false;
     s.isOverBtn = false;
 
     setSelectedSubject(chosen);
-    setActiveView('dashboard');
+    setActiveView('shelf');
 
     try {
       localStorage.setItem(STORAGE_SUBJECT_KEY, JSON.stringify(chosen));
       localStorage.setItem('studyhive_selected_subject_id', chosen.code);
-      localStorage.setItem(STORAGE_VIEW_KEY, 'dashboard');
+      localStorage.setItem(STORAGE_VIEW_KEY, 'shelf');
     } catch {
       // Ignore storage errors
     }
@@ -299,7 +295,7 @@ export default function BookshelfPage() {
   // Open center featured-book pop-out Detail
   const openDetail = useCallback(() => {
     const s = stateRef.current;
-    if (s.isOpen || s.inDashboard) return;
+    if (s.isOpen) return;
 
     s.isOpen = true;
     s.T = Math.round(s.T);
@@ -461,7 +457,7 @@ export default function BookshelfPage() {
   // Jump to tab group
   const handleTabClick = useCallback((tabName: string) => {
     const s = stateRef.current;
-    if (s.isOpen || s.inDashboard) return;
+    if (s.isOpen) return;
 
     let targetIdx = 0;
     if (tabName === '19–21') targetIdx = 0;
@@ -482,7 +478,7 @@ export default function BookshelfPage() {
   // Arrow navigation
   const handleArrow = useCallback((dir: number) => {
     const s = stateRef.current;
-    if (s.isOpen || s.inDashboard) return;
+    if (s.isOpen) return;
     s.T = Math.round(s.T) + dir;
     playCardSound(1.0);
   }, [playCardSound]);
@@ -543,7 +539,6 @@ export default function BookshelfPage() {
     // Keyboard navigation
     const onKeyDown = (e: KeyboardEvent) => {
       const s = stateRef.current;
-      if (s.inDashboard) return;
 
       if (e.key === 'ArrowLeft') {
         handleArrow(-1);
@@ -564,7 +559,7 @@ export default function BookshelfPage() {
     // Wheel scrolling
     const onWheel = (e: WheelEvent) => {
       const s = stateRef.current;
-      if (s.isOpen || s.inDashboard) return;
+      if (s.isOpen) return;
 
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       s.T += (delta / (s.ws + s.gap)) * 0.5;
@@ -599,7 +594,7 @@ export default function BookshelfPage() {
       if (cursorRef.current) {
         cursorRef.current.style.transform = `translate3d(${s.cx.toFixed(1)}px, ${s.cy.toFixed(1)}px, 0)`;
 
-        if (s.isOpen || s.inDashboard) {
+        if (s.isOpen) {
           cursorRingRef.current?.classList.remove('scale-[1.75]', 'scale-[0.72]', 'bg-[var(--cobalt)]', 'border-[var(--cobalt)]');
           if (s.isOverBtn) {
             cursorRingRef.current?.classList.add('scale-[0.55]');
@@ -629,11 +624,6 @@ export default function BookshelfPage() {
           cursorDotRef.current?.classList.remove('scale-0');
           cursorLabelRef.current?.classList.remove('scale-100');
         }
-      }
-
-      if (s.inDashboard) {
-        animId = requestAnimationFrame(frameLoop);
-        return;
       }
 
       // Scroll spring integration
@@ -784,7 +774,7 @@ export default function BookshelfPage() {
   // Shelf Drag handlers
   const onShelfPointerDown = (e: React.PointerEvent) => {
     const s = stateRef.current;
-    if (s.isOpen || s.inDashboard) return;
+    if (s.isOpen) return;
     s.isDragging = true;
     s.dragStartX = e.clientX;
     s.dragStartT = s.T;
@@ -815,7 +805,7 @@ export default function BookshelfPage() {
   // Tape click
   const handleTapeClick = (virtualIdx: number) => {
     const s = stateRef.current;
-    if (s.hasMovedDuringDrag || s.inDashboard) return;
+    if (s.hasMovedDuringDrag) return;
 
     let r = (virtualIdx - s.s) % 36;
     if (r > 18) r -= 36;
