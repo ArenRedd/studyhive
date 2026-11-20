@@ -1,15 +1,16 @@
 /**
- * StudyHive content — CS3691 Embedded Systems & IoT, 26 questions across five units.
- * Every count, percentage and hexagon segment in the app is computed from this file.
+ * StudyHive content — Curated question sets across five units.
+ * CS3691: Embedded Systems & IoT (26 questions)
+ * CS3591: Computer Networks (26 questions)
  *
  * Question = { id, text, answer? }
  * Unit     = { id: 'I' | 'II' | 'III' | 'IV' | 'V', title, shortTitle, questions[] }
  *
- * Keep question ids unique (e.g. "II.1", "II.2") — progress is stored by id.
+ * Keep question ids unique (e.g. "I.1", "II.2") — progress is stored by id.
  * Add an `answer` to any question to fill its practice flashcard.
  */
 
-export const units = [
+export const cs3691Units = [
   {
     id: 'I',
     title: '8051 Microcontroller',
@@ -82,7 +83,73 @@ export const units = [
   },
 ];
 
-/** Completed on first load — a fresh tracker starts at 0 of 26. */
+export const cs3591Units = [
+  {
+    id: 'I',
+    title: 'Introduction to Computer Networks',
+    shortTitle: 'Intro to CN',
+    questions: [
+      { id: 'I.1', text: 'Explain OSI Network Architecture (OSI Model) and its seven layers.' },
+      { id: 'I.2', text: 'Explain the different types of computer networks (PAN, LAN, CAN, MAN and WAN).' },
+      { id: 'I.3', text: 'Explain the TCP/IP Protocol Suite and its four layers.' },
+      { id: 'I.4', text: 'Explain Email Protocols (SMTP, POP3, IMAP and MIME).' },
+      { id: 'I.5', text: 'Explain File Transfer Protocol (FTP).' },
+      { id: 'I.6', text: 'Explain Domain Name System (DNS).' },
+    ],
+  },
+  {
+    id: 'II',
+    title: 'Transport Layer',
+    shortTitle: 'Transport Layer',
+    questions: [
+      { id: 'II.1', text: 'Explain TCP and UDP protocols and compare their features.' },
+      { id: 'II.2', text: 'Explain Congestion Control and its techniques.' },
+      { id: 'II.3', text: 'Explain Flow Control using the Sliding Window Technique.' },
+      { id: 'II.4', text: 'Explain Congestion Avoidance, including the DECbit Scheme and RED algorithm.' },
+    ],
+  },
+  {
+    id: 'III',
+    title: 'Network Layer',
+    shortTitle: 'Network Layer',
+    questions: [
+      { id: 'III.1', text: 'Explain IPv4 and IPv6 protocols.' },
+      { id: 'III.2', text: 'Explain Internet Control Message Protocol (ICMP).' },
+      { id: 'III.3', text: 'Explain Dynamic Host Configuration Protocol (DHCP).' },
+      { id: 'III.4', text: 'Explain Address Resolution Protocol (ARP).' },
+      { id: 'III.5', text: 'Explain Reverse Address Resolution Protocol (RARP).' },
+      { id: 'III.6', text: 'Explain Subnetting with an example.' },
+    ],
+  },
+  {
+    id: 'IV',
+    title: 'Routing Protocols',
+    shortTitle: 'Routing Protocols',
+    questions: [
+      { id: 'IV.1', text: 'Explain Routing Information Protocol (RIP).' },
+      { id: 'IV.2', text: 'Explain Distance Vector Routing and its working.' },
+      { id: 'IV.3', text: 'Explain Open Shortest Path First (OSPF) protocol.' },
+      { id: 'IV.4', text: 'Explain Border Gateway Protocol (BGP).' },
+      { id: 'IV.5', text: 'Explain Distance Vector Multicast Routing Protocol (DVMRP).' },
+    ],
+  },
+  {
+    id: 'V',
+    title: 'Data Link Layer and Wireless Networks',
+    shortTitle: 'Data Link & Wireless',
+    questions: [
+      { id: 'V.1', text: 'Explain Wireless LAN (IEEE 802.11) architecture and its components.' },
+      { id: 'V.2', text: 'Explain CSMA/CD (Carrier Sense Multiple Access with Collision Detection).' },
+      { id: 'V.3', text: 'Explain High-Level Data Link Control (HDLC) protocol.' },
+      { id: 'V.4', text: 'Explain Point-to-Point Protocol (PPP).' },
+      { id: 'V.5', text: 'Explain the different types of Switching (Packet, Circuit and Message Switching).' },
+    ],
+  },
+];
+
+export const units = cs3691Units;
+
+/** Completed on first load — a fresh tracker starts at 0. */
 export const DEFAULT_COMPLETED = [];
 
 export const TOTAL_QUESTIONS = units.reduce((sum, unit) => sum + unit.questions.length, 0);
@@ -108,11 +175,17 @@ export const loadSubjectUnits = (subjectCode = 'CS3691') => {
     const raw = localStorage.getItem(`studyhive.custom_units.${subjectCode}`);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const totalQ = parsed.reduce((sum, u) => sum + (u.questions?.length || 0), 0);
+        if (totalQ > 0) return parsed;
+      }
     }
   } catch {}
   if (subjectCode === 'CS3691') {
-    return units;
+    return cs3691Units;
+  }
+  if (subjectCode === 'CS3591') {
+    return cs3591Units;
   }
   return createDefaultSubjectUnits(subjectCode);
 };

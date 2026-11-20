@@ -6,7 +6,7 @@ import { useSubject } from '@/context/SubjectContext';
 
 export default function TopBar() {
   const navigate = useNavigate();
-  const { honey, streak } = useProgress();
+  const { honey, streak, progress } = useProgress();
   const { currentSubject } = useSubject();
 
   const sessionLabel =
@@ -62,11 +62,11 @@ export default function TopBar() {
             </span>
             <span aria-hidden="true" className="text-[#4A3F2C]">·</span>
             <span>{sessionLabel}</span>
-            {currentSubject.code === 'CS3691' && (
+            {progress?.total > 0 && (
               <>
                 <span aria-hidden="true" className="text-[#4A3F2C]">·</span>
                 <span className="hidden sm:inline text-[var(--cream)] font-medium">
-                  26 Questions · 5 Units
+                  {progress.total} Questions · 5 Units
                 </span>
               </>
             )}
